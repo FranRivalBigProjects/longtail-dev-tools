@@ -1,0 +1,1 @@
+const res=document.getElementById('res');function run(){res.innerText='__index: '+(code.value.match(/__index/g)||[]).length;}

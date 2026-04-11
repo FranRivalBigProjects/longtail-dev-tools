@@ -1,0 +1,1 @@
+const res=document.getElementById('res');function run(){let r=a.value.split('\n').length;let c=b.value.split('\n').length;res.innerText='Result approx: '+r+' x '+c;}

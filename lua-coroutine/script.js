@@ -1,0 +1,1 @@
+const res=document.getElementById('res');function run(){res.innerText='Coroutine calls: '+(code.value.match(/coroutine/g)||[]).length;}
