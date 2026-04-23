@@ -1,1 +1,973 @@
-<html><head><meta charset='UTF-8'><title>Zig Memory Allocator Simulation Tool</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><link rel='stylesheet' href='styles.css'></head><body><div class='container'><h1>Zig Memory Allocator Simulation Tool</h1><input id='alloc'><input id='free'><button onclick='run()'>Run</button><div id='res' class='result'></div></div><script src='script.js'></script></body></html>
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Zig Regex – Pattern Matching Tool & Guide for Zig Developers</title>
+
+<meta name="description" content="Zig regex tool and guide. Test patterns, explore Zig's stdlib alternatives to regex (std.mem, tokenize, split), and learn which regex libraries work with Zig. Free, no login.">
+
+<meta name="keywords" content="zig regex, zig regex library, zig string matching, zig pattern matching, zig std.mem, zig regex tool, mvzr zig, zig posix regex, zig regex alternative, zig string search">
+
+<link rel="canonical" href="https://franrivalbigprojects.github.io/longtail-dev-tools/zig-allocator/">
+
+<meta property="og:title" content="Zig Regex – Pattern Matching Tool & Guide for Zig Developers">
+<meta property="og:description" content="Test regex-style patterns in Zig's context. Explore std.mem alternatives, learn mvzr and POSIX regex.h approaches. Free, no login.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #161a20;
+  --border: #1f2530;
+  --border-light: #283040;
+  --zig: #f7a41d;
+  --zig-dim: rgba(247,164,29,0.1);
+  --zig-dim2: rgba(247,164,29,0.05);
+  --green: #4ade80;
+  --green-dim: rgba(74,222,128,0.1);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.08);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96,165,250,0.1);
+  --text: #dce8f5;
+  --text-muted: #5b7a99;
+  --text-dim: #2a3d52;
+  --mono: 'Fira Code', monospace;
+  --sans: 'Manrope', sans-serif;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 13px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,12,16,0.95);
+  backdrop-filter: blur(10px);
+}
+
+.header-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-zig {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--zig);
+  background: var(--zig-dim2);
+  border: 1px solid rgba(247,164,29,0.2);
+  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-text {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.logo-text strong { color: var(--zig); font-weight: 500; }
+
+.wrapper { max-width: 920px; margin: 0 auto; padding: 0 24px 80px; }
+
+/* ─── HERO ─── */
+.hero {
+  padding: 50px 0 38px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 38px;
+}
+
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--zig);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 16px;
+  height: 1px;
+  background: var(--zig);
+  opacity: 0.5;
+}
+
+h1 {
+  font-size: clamp(22px, 3.5vw, 30px);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+}
+
+h1 em { font-style: normal; color: var(--zig); }
+
+.hero-sub {
+  font-size: 15px;
+  color: var(--text-muted);
+  max-width: 630px;
+  line-height: 1.75;
+  margin-bottom: 22px;
+}
+
+.hero-sub strong { color: var(--text); }
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+}
+
+.badge.zig {
+  color: var(--zig);
+  background: var(--zig-dim2);
+  border-color: rgba(247,164,29,0.25);
+}
+
+/* ─── TOOL ─── */
+.tool-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.tool-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+
+.mode-tab {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border-right: 1px solid var(--border);
+}
+
+.mode-tab:last-child { border-right: none; }
+.mode-tab.active { background: var(--zig-dim); color: var(--zig); }
+.mode-tab:hover:not(.active) { background: var(--zig-dim2); color: var(--text); }
+
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.field-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+
+input[type="text"], textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(247,164,29,0.4);
+}
+
+input[type="text"]::placeholder, textarea::placeholder { color: var(--text-dim); }
+
+textarea { min-height: 100px; resize: vertical; }
+
+.tool-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-primary {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-family: var(--sans);
+  font-weight: 600;
+  background: var(--zig);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-ghost {
+  padding: 9px 16px;
+  font-size: 12px;
+  font-family: var(--mono);
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.btn-ghost:hover { color: var(--text); border-color: var(--text-dim); opacity: 1; transform: none; }
+
+/* ─── RESULTS ─── */
+#output { margin-top: 16px; display: none; }
+
+.result-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.result-ok { border-color: rgba(74,222,128,0.3); }
+.result-fail { border-color: rgba(248,113,113,0.3); }
+
+.result-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.match-highlight {
+  background: rgba(247,164,29,0.25);
+  color: var(--zig);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.code-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.8;
+  margin-top: 12px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.kw { color: var(--zig); }
+.fn-name { color: var(--blue); }
+.str { color: var(--green); }
+.cm { color: var(--text-dim); }
+.ty { color: #c084fc; }
+
+/* ─── DIVIDER ─── */
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+/* ─── CONTENT ─── */
+.content-section { margin-bottom: 48px; }
+
+.section-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--zig);
+  opacity: 0.7;
+  margin-bottom: 8px;
+  display: block;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface2);
+  color: var(--zig);
+  padding: 2px 7px;
+  border-radius: 3px;
+  border: 1px solid var(--border-light);
+}
+
+/* ─── APPROACH CARDS ─── */
+.approach-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.approach-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: border-color 0.2s;
+}
+
+.approach-card:hover { border-color: var(--border-light); }
+
+.approach-eye {
+  font-family: var(--mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 8px;
+}
+
+.approach-card strong {
+  font-size: 13px;
+  color: var(--text);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.approach-card p { font-size: 13px; margin: 0; }
+
+/* ─── DENSE BLOCK ─── */
+.dense-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-top: 16px;
+}
+
+.dense-block p {
+  font-size: 14px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.8;
+}
+
+.dense-block p:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.dense-block strong { color: var(--text); }
+
+/* ─── FAQ ─── */
+.faq-list {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-item:last-child { border-bottom: none; }
+
+.faq-q {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: none;
+  padding: 15px 20px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: var(--sans);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.15s;
+  font-weight: 500;
+}
+
+.faq-q:hover { background: var(--zig-dim2); }
+
+.faq-arrow {
+  font-size: 11px;
+  color: var(--text-dim);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  font-family: var(--mono);
+}
+
+.faq-item.open .faq-arrow { transform: rotate(180deg); }
+
+.faq-a {
+  display: none;
+  padding: 0 20px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.faq-item.open .faq-a { display: block; }
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 22px 0;
+}
+
+.footer-inner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+footer p {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin: 0;
+}
+
+footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 11px;
+  font-family: var(--mono);
+}
+
+footer a:hover { color: var(--zig); }
+
+@media (max-width: 620px) {
+  .input-row { grid-template-columns: 1fr; }
+  .approach-grid { grid-template-columns: 1fr; }
+  .hero { padding: 32px 0 24px; }
+}
+</style>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Zig Regex Pattern Matcher",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "description": "Free Zig regex tool. Test std.mem pattern matching alternatives, explore substring search, prefix/suffix matching, and tokenization in Zig's standard library. Learn when to use mvzr or POSIX regex.h in Zig projects.",
+  "featureList": "Zig string pattern matching, std.mem search, substring detection, prefix suffix matching, tokenize split, Zig regex alternatives"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Zig have a built-in regex library?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Zig deliberately excludes regex from its standard library. The Zig team's position is that regex adds significant complexity to the language runtime and most use cases can be solved with std.mem functions (indexOf, startsWith, endsWith, containsAtLeast) which are explicit, fast, and composable. For cases that genuinely need regex, the options are: mvzr (pure Zig, zero allocation), zig-regex (GitHub library), or POSIX regex.h via Zig's C interop."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the best way to do regex in Zig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For simple pattern matching in Zig, use std.mem functions: std.mem.indexOf for substring search, std.mem.startsWith and std.mem.endsWith for prefix/suffix checks, std.mem.tokenizeSequence or std.mem.splitSequence for splitting on delimiters. For complex patterns requiring actual regex, use the mvzr library (zero allocation, pure Zig) or link POSIX regex.h via @cImport. Avoid zig-regex on GitHub as it is unmaintained."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I search for a substring in Zig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use std.mem.indexOf: if (std.mem.indexOf(u8, haystack, needle)) |pos| { // found at pos }. This returns an optional usize — the byte offset of the first match, or null if not found. For case-insensitive search, convert both strings to lowercase first using std.ascii.lowerString."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is mvzr in Zig?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "mvzr (Minimum Viable Zig Regex) is a pure Zig regex library with zero memory allocation. It supports possessive and lazy qualifiers, alternation, grouping, character sets, built-in groups (\\w, \\s, \\d), and anchors. It has limitations: max 64 operations per regex, ASCII only, no Unicode support. Add it as a Zig package with zig fetch --save git+https://github.com/mnemnion/mvzr."
+      }
+    }
+  ]
+}
+</script>
+
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-zig">Z</div>
+    <span class="logo-text"><strong>zig</strong>-regex-pattern-tool</span>
+  </div>
+</header>
+
+<div class="wrapper">
+
+  <!-- HERO -->
+
+  <section class="hero">
+    <p class="hero-eyebrow">Free Zig Developer Tool</p>
+    <h1>Zig Regex —<br><em>Pattern Matching Without a Regex Engine</em></h1>
+    <p class="hero-sub">
+      Zig has <strong>no built-in regex library</strong> — by design. This tool demonstrates Zig's <code>std.mem</code> alternatives: substring search, prefix/suffix matching, tokenization, and splitting. Learn when you actually need regex and which library to use.
+    </p>
+    <div class="badges">
+      <span class="badge zig">Zig stdlib</span>
+      <span class="badge zig">std.mem</span>
+      <span class="badge">mvzr patterns</span>
+      <span class="badge">POSIX regex.h</span>
+      <span class="badge">Free · No login</span>
+    </div>
+  </section>
+
+  <!-- TOOL -->
+
+  <div class="tool-wrap">
+    <p class="tool-label">// Zig pattern matching simulator</p>
+
+<div class="mode-tabs">
+  <button class="mode-tab active" onclick="setMode('contains')" id="tab-contains">indexOf</button>
+  <button class="mode-tab" onclick="setMode('starts')" id="tab-starts">startsWith</button>
+  <button class="mode-tab" onclick="setMode('ends')" id="tab-ends">endsWith</button>
+  <button class="mode-tab" onclick="setMode('split')" id="tab-split">split</button>
+  <button class="mode-tab" onclick="setMode('count')" id="tab-count">count</button>
+</div>
+
+<div class="input-row">
+  <div>
+    <p class="field-label">Input string (haystack)</p>
+    <input type="text" id="haystack" placeholder="The quick brown fox jumps over the lazy dog" value="The quick brown fox jumps over the lazy dog">
+  </div>
+  <div>
+    <p class="field-label" id="needleLabel">Search pattern (needle)</p>
+    <input type="text" id="needle" placeholder="fox" value="fox">
+  </div>
+</div>
+
+<div class="tool-actions">
+  <button class="btn-primary" onclick="runTool()">Run in Zig</button>
+  <button class="btn-ghost" onclick="loadSample()">Load sample</button>
+</div>
+
+<div id="output"></div>
+
+  </div>
+
+  <hr class="divider">
+
+  <!-- WHY NO REGEX -->
+
+  <section class="content-section">
+    <span class="section-eyebrow">// Why no regex in Zig</span>
+    <h3>Why Zig Has No Built-in Regex Library</h3>
+    <p>
+      Zig deliberately excludes regex from its standard library. This is a principled design decision, not an oversight. The Zig team's reasoning: regex engines add significant complexity to the language runtime, introduce hidden performance costs (NFA/DFA compilation, backtracking, Unicode normalization), and most real-world use cases can be solved with explicit, composable string operations that are easier to reason about and optimize.
+    </p>
+    <p>
+      Andrew Kelley (Zig's creator) has described Zig's philosophy as providing <strong>mechanisms, not policies</strong>. Instead of a high-level regex API, Zig's <code>std.mem</code> gives you precise, low-level string operations: <code>indexOf</code> for byte-exact substring search, <code>startsWith</code>/<code>endsWith</code> for prefix/suffix matching, <code>tokenizeSequence</code> and <code>splitSequence</code> for delimiter-based parsing. These operations compose predictably and have no hidden allocations.
+    </p>
+    <p>
+      For cases that genuinely require regex — log parsing, protocol validation, user-input pattern matching — the ecosystem provides options: <strong>mvzr</strong> (pure Zig, zero allocation, 1000 lines), <strong>POSIX regex.h</strong> via Zig's C interop (<code>@cImport</code>), and community libraries. The key difference from other languages: you explicitly opt into regex complexity rather than it being the default.
+    </p>
+  </section>
+
+  <hr class="divider">
+
+  <!-- STD.MEM ALTERNATIVES -->
+
+  <section class="content-section">
+    <span class="section-eyebrow">// std.mem alternatives</span>
+    <h3>Zig std.mem Pattern Matching — What Replaces Regex</h3>
+    <p>
+      These are the <code>std.mem</code> functions that cover the majority of regex use cases in Zig. All operate on byte slices (<code>[]const u8</code>), have no hidden allocations, and run at near-optimal speed.
+    </p>
+
+<div class="approach-grid">
+  <div class="approach-card">
+    <p class="approach-eye" style="color:var(--zig)">indexOf //</p>
+    <strong>Substring search</strong>
+    <p>Finds first occurrence of needle in haystack. Returns <code>?usize</code> — the byte offset or null. Replaces <code>/pattern/</code> for literal strings.</p>
+    <div class="code-block"><span class="kw">const</span> pos = std.mem.<span class="fn-name">indexOf</span>(<span class="ty">u8</span>, haystack, needle);
+
+<span class="kw">if</span> (pos) |i| { <span class="cm">// found at byte i</span> }</div>
+</div>
+<div class="approach-card">
+<p class="approach-eye" style="color:var(--blue)">startsWith / endsWith //</p>
+<strong>Prefix / suffix matching</strong>
+<p>Returns <code>bool</code>. Replaces <code>/^prefix/</code> and <code>/suffix$/</code> anchored patterns. Zero allocation, O(n) where n is prefix length.</p>
+<div class="code-block"><span class="kw">const</span> ok = std.mem.<span class="fn-name">startsWith</span>(<span class="ty">u8</span>, s, <span class="str">“prefix”</span>);
+<span class="kw">const</span> ok = std.mem.<span class="fn-name">endsWith</span>(<span class="ty">u8</span>, s, <span class="str">”.zig”</span>);</div>
+</div>
+<div class="approach-card">
+<p class="approach-eye" style="color:var(--green)">splitSequence //</p>
+<strong>Splitting on delimiter</strong>
+<p>Returns an iterator yielding subslices between a delimiter. Replaces <code>/split(delimiter)/</code>. Works on any byte sequence.</p>
+<div class="code-block"><span class="kw">var</span> it = std.mem.<span class="fn-name">splitSequence</span>(<span class="ty">u8</span>, input, <span class="str">”,”</span>);
+<span class="kw">while</span> (it.<span class="fn-name">next</span>()) |token| { … }</div>
+</div>
+<div class="approach-card">
+<p class="approach-eye" style="color:#c084fc)">count //</p>
+<strong>Count occurrences</strong>
+<p>Counts non-overlapping occurrences of needle in haystack. Replaces <code>/g</code> global match count. Returns <code>usize</code>.</p>
+<div class="code-block"><span class="kw">const</span> n = std.mem.<span class="fn-name">count</span>(<span class="ty">u8</span>, haystack, needle);
+<span class="cm">// n = number of non-overlapping matches</span></div>
+</div>
+</div>
+
+  </section>
+
+  <hr class="divider">
+
+  <!-- WHEN YOU ACTUALLY NEED REGEX -->
+
+  <section class="content-section">
+    <span class="section-eyebrow">// When regex is necessary</span>
+    <h3>When You Actually Need Regex in Zig — And Which Library to Use</h3>
+    <p>
+      <code>std.mem</code> covers ~80% of string matching needs. The remaining 20% — variable-length patterns, alternation, character classes — requires a regex engine. Here are the practical options:
+    </p>
+    <div class="approach-grid">
+      <div class="approach-card">
+        <p class="approach-eye" style="color:var(--zig)">mvzr — recommended //</p>
+        <strong>Pure Zig, zero allocation</strong>
+        <p>1000 lines, no dependencies. Supports <code>\w \s \d</code>, alternation <code>foo|bar</code>, groups, sets <code>[a-z]</code>, quantifiers <code>* + ?</code> and lazy variants. ASCII only, max 64 ops per pattern.</p>
+        <div class="code-block"><span class="cm">// build.zig.zon</span>
+zig <span class="fn-name">fetch</span> --save git+https://github.com/mnemnion/mvzr
+
+<span class="kw">const</span> re = mvzr.<span class="fn-name">compile</span>(<span class="str">”\w+”</span>) orelse <span class="kw">return</span>;
+<span class="kw">if</span> (re.<span class="fn-name">match</span>(input)) |m| { … }</div>
+</div>
+<div class="approach-card">
+<p class="approach-eye" style="color:var(--text-muted)">POSIX regex.h — C interop //</p>
+<strong>Full POSIX regex via @cImport</strong>
+<p>Full regex.h support (REG_EXTENDED, REG_ICASE, capture groups). Requires a C header shim for size/alignment of regex_t. Cannot use Zig allocators internally.</p>
+<div class="code-block"><span class="kw">const</span> re = <span class="fn-name">@cImport</span>(<span class="fn-name">@cInclude</span>(<span class="str">“regez.h”</span>));
+<span class="cm">// regcomp, regexec, regfree</span>
+<span class="cm">// See openmymind.net guide for full setup</span></div>
+</div>
+</div>
+<p style="margin-top:14px;font-size:13px;color:var(--text-dim);">Note: <code>tiehuis/zig-regex</code> on GitHub is unmaintained (last commit 2020) and targets old Zig versions. Do not use for new projects.</p>
+
+  </section>
+
+  <hr class="divider">
+
+  <!-- WHAT DEVS ASK -->
+
+  <section class="content-section">
+    <span class="section-eyebrow">// Community questions</span>
+    <h3>What Developers Ask About Regex in Zig</h3>
+    <div class="dense-block">
+      <p><strong>I need to validate an email or URL in Zig — do I need regex?</strong><br>
+      For email validation, a simple <code>std.mem.indexOf</code> for <code>@</code> and a suffix check for a TLD handles 95% of practical cases. For strict RFC 5321 validation, use a proper parser — regex is actually the wrong tool for email regardless of language. For URLs, <code>std.Uri.parse</code> in Zig's stdlib handles parsing properly. Only reach for regex if you need pattern flexibility that these don't provide.</p>
+
+  <p><strong>How do I do case-insensitive search in Zig?</strong><br>
+  Zig's <code>std.mem.indexOf</code> is case-sensitive. For case-insensitive search: convert both strings to lowercase first using <code>std.ascii.lowerString</code> into stack-allocated buffers, then use <code>indexOf</code>. This is more explicit than a regex <code>i</code> flag but makes the case folding visible in code — consistent with Zig's "no hidden behavior" philosophy.</p>
+
+  <p><strong>What does zero-allocation mean for mvzr?</strong><br>
+  mvzr compiles regex patterns at compile-time using Zig's <code>comptime</code> or into a small fixed-size bytecode structure. When matching, it uses no heap allocation — the regex VM state fits on the stack. This matters in Zig because explicit allocation is a core design concern. With POSIX regex.h, <code>regcomp</code> allocates internally (you must call <code>regfree</code>) and you cannot control which allocator it uses.</p>
+
+  <p><strong>Why doesn't Zig have regex in stdlib like Python or JavaScript?</strong><br>
+  It's a deliberate trade-off. Zig targets systems programming where predictable performance and no hidden costs matter. A regex engine in stdlib would be used by default, hiding allocation patterns and complexity. The Zig approach: provide the primitives (<code>std.mem</code>) and let the ecosystem provide regex as an explicit opt-in dependency. This also keeps the stdlib small and the language specification minimal.</p>
+</div>
+
+  </section>
+
+  <hr class="divider">
+
+  <!-- FAQ -->
+
+  <section class="content-section">
+    <span class="section-eyebrow">// FAQ</span>
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Does Zig have built-in regex support?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">No. Zig deliberately excludes regex from its standard library. For most use cases, <code>std.mem</code> functions (indexOf, startsWith, endsWith, splitSequence) are sufficient. For full regex, use the <strong>mvzr</strong> library (pure Zig, zero allocation) or POSIX <code>regex.h</code> via Zig's C interop.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          What is mvzr in Zig?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">mvzr (Minimum Viable Zig Regex) is a pure Zig regex library with zero memory allocation. It supports <code>\w \s \d</code> groups, alternation, character sets, possessive and lazy quantifiers, and anchors. It's under 1000 lines with no dependencies other than <code>std</code>. Limitations: ASCII only, max 64 ops per pattern. Install with <code>zig fetch --save git+https://github.com/mnemnion/mvzr</code>.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          How do I search for a substring in Zig?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a"><code>std.mem.indexOf(u8, haystack, needle)</code> returns <code>?usize</code> — the byte offset of the first match, or null if not found. Use it in an <code>if</code> with optional binding: <code>if (std.mem.indexOf(u8, s, "pattern")) |pos| { }</code>. For all occurrences, loop with indexOf starting from the previous position + needle length.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          How do I split a string by delimiter in Zig?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">Use <code>std.mem.splitSequence(u8, input, delimiter)</code> which returns an iterator. Call <code>.next()</code> to get each token as a <code>[]const u8</code> slice. For splitting on any character in a set, use <code>std.mem.tokenizeAny</code>. These are zero-allocation — they return slices into the original string, not new allocations.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Should I use zig-regex from GitHub?
+          <span class="faq-arrow">▾</span>
+        </button>
+        <div class="faq-a">No. <code>tiehuis/zig-regex</code> targets Zig 0.6 and is unmaintained since 2020. It will not compile with modern Zig versions. Use <strong>mvzr</strong> instead — it's actively maintained, targets current Zig, and has zero allocation.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <p>zig-regex-tool · free · browser-only · no login</p>
+    <div style="display:flex;gap:16px;">
+      <a href="../">← All tools</a>
+      <p>std.mem · mvzr · posix regex.h</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+let currentMode = 'contains';
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + mode).classList.add('active');
+
+  const labels = {
+    contains: 'Search pattern (needle)',
+    starts: 'Prefix to check',
+    ends: 'Suffix to check',
+    split: 'Delimiter',
+    count: 'Pattern to count'
+  };
+  document.getElementById('needleLabel').textContent = labels[mode];
+
+  const placeholders = {
+    contains: 'fox',
+    starts: 'The',
+    ends: 'dog',
+    split: ' ',
+    count: 'the'
+  };
+  document.getElementById('needle').placeholder = placeholders[mode];
+
+  document.getElementById('output').style.display = 'none';
+}
+
+function runTool() {
+  const haystack = document.getElementById('haystack').value;
+  const needle = document.getElementById('needle').value;
+  const outputEl = document.getElementById('output');
+  outputEl.style.display = 'block';
+
+  if (!haystack || !needle) {
+    outputEl.innerHTML = `<div class="result-box"><span style="color:var(--text-muted);font-size:12px;">// Enter both fields above</span></div>`;
+    return;
+  }
+
+  let html = '';
+
+  if (currentMode === 'contains') {
+    const idx = haystack.indexOf(needle);
+    const found = idx !== -1;
+    const highlighted = found
+      ? haystack.substring(0, idx) + `<span class="match-highlight">${escHtml(haystack.substring(idx, idx + needle.length))}</span>` + escHtml(haystack.substring(idx + needle.length))
+      : escHtml(haystack);
+
+    html = `<div class="result-box ${found ? 'result-ok' : 'result-fail'}">
+      <div class="result-title" style="color:${found ? 'var(--green)' : 'var(--red)'}">
+        ${found ? '✓' : '✗'} std.mem.indexOf — ${found ? `match at byte ${idx}` : 'no match'}
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">${highlighted}</div>
+      <div class="code-block"><span class="kw">const</span> pos = std.mem.<span class="fn-name">indexOf</span>(<span class="ty">u8</span>, <span class="str">"${escHtml(haystack.substring(0,40))}${haystack.length > 40 ? '...' : ''}"</span>, <span class="str">"${escHtml(needle)}"</span>);
+<span class="cm">// Result: ${found ? `?usize = ${idx}` : '?usize = null'}</span>
+<span class="kw">if</span> (pos) |i| {
+    std.debug.<span class="fn-name">print</span>(<span class="str">"Found at index {d}\\n"</span>, .{i});
+}</div>
+    </div>`;
+  }
+
+  else if (currentMode === 'starts') {
+    const result = haystack.startsWith(needle);
+    html = `<div class="result-box ${result ? 'result-ok' : 'result-fail'}">
+      <div class="result-title" style="color:${result ? 'var(--green)' : 'var(--red)'}">
+        ${result ? '✓' : '✗'} std.mem.startsWith — ${result ? 'true' : 'false'}
+      </div>
+      <div class="code-block"><span class="kw">const</span> ok = std.mem.<span class="fn-name">startsWith</span>(<span class="ty">u8</span>, input, <span class="str">"${escHtml(needle)}"</span>);
+<span class="cm">// Result: ${result}</span></div>
+    </div>`;
+  }
+
+  else if (currentMode === 'ends') {
+    const result = haystack.endsWith(needle);
+    html = `<div class="result-box ${result ? 'result-ok' : 'result-fail'}">
+      <div class="result-title" style="color:${result ? 'var(--green)' : 'var(--red)'}">
+        ${result ? '✓' : '✗'} std.mem.endsWith — ${result ? 'true' : 'false'}
+      </div>
+      <div class="code-block"><span class="kw">const</span> ok = std.mem.<span class="fn-name">endsWith</span>(<span class="ty">u8</span>, input, <span class="str">"${escHtml(needle)}"</span>);
+<span class="cm">// Result: ${result}</span></div>
+    </div>`;
+  }
+
+  else if (currentMode === 'split') {
+    const parts = haystack.split(needle);
+    const preview = parts.slice(0, 8);
+    html = `<div class="result-box result-ok">
+      <div class="result-title" style="color:var(--green)">
+        ✓ std.mem.splitSequence — ${parts.length} tokens
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+        ${preview.map((p, i) => `<span style="background:var(--zig-dim);color:var(--zig);border:1px solid rgba(247,164,29,0.2);border-radius:3px;padding:2px 7px;font-size:11px;font-family:var(--mono);">[${i}] ${escHtml(p.substring(0,20))}${p.length > 20 ? '…' : ''}</span>`).join('')}
+        ${parts.length > 8 ? `<span style="color:var(--text-dim);font-size:11px;font-family:var(--mono);">+${parts.length - 8} more</span>` : ''}
+      </div>
+      <div class="code-block"><span class="kw">var</span> it = std.mem.<span class="fn-name">splitSequence</span>(<span class="ty">u8</span>, input, <span class="str">"${escHtml(needle)}"</span>);
+<span class="kw">while</span> (it.<span class="fn-name">next</span>()) |token| {
+    std.debug.<span class="fn-name">print</span>(<span class="str">"{s}\\n"</span>, .{token});
+}
+<span class="cm">// ${parts.length} tokens total</span></div>
+    </div>`;
+  }
+
+  else if (currentMode === 'count') {
+    let count = 0;
+    let idx = 0;
+    const positions = [];
+    while (true) {
+      const found = haystack.toLowerCase().indexOf(needle.toLowerCase(), idx);
+      if (found === -1) break;
+      positions.push(found);
+      count++;
+      idx = found + needle.length;
+      if (idx >= haystack.length) break;
+    }
+    html = `<div class="result-box ${count > 0 ? 'result-ok' : 'result-fail'}">
+      <div class="result-title" style="color:${count > 0 ? 'var(--green)' : 'var(--red)'}">
+        ${count > 0 ? '✓' : '○'} std.mem.count — ${count} occurrence${count !== 1 ? 's' : ''}
+        ${positions.length > 0 ? `<span style="font-size:11px;color:var(--text-muted);">at bytes: ${positions.slice(0,5).join(', ')}${positions.length > 5 ? '…' : ''}</span>` : ''}
+      </div>
+      <div class="code-block"><span class="kw">const</span> n = std.mem.<span class="fn-name">count</span>(<span class="ty">u8</span>, haystack, <span class="str">"${escHtml(needle)}"</span>);
+<span class="cm">// Result: ${count} (non-overlapping, case-sensitive)</span>
+<span class="cm">// For case-insensitive: lowercase both strings first</span></div>
+    </div>`;
+  }
+
+  outputEl.innerHTML = html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadSample() {
+  setMode('contains');
+  document.getElementById('haystack').value = 'fn main() !void { var gpa = std.heap.GeneralPurposeAllocator(.{}){}; }';
+  document.getElementById('needle').value = 'Allocator';
+  setTimeout(runTool, 50);
+}
+
+function toggleFaq(btn) {
+  btn.parentElement.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>
