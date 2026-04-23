@@ -1,1 +1,0 @@
-const res=document.getElementById('res');function run(){res.innerText='Net: '+(+alloc.value-+free.value);}
